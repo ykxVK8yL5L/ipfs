@@ -4,7 +4,7 @@ WORKDIR /go/src/app
 COPY ./app /go/src/app
 
 RUN go mod vendor
-RUN go run main.go
+RUN go build main.go
+CMD["./main"]
 
 VOLUME ["/go/src/app/config"]
-EXPOSE 8080
