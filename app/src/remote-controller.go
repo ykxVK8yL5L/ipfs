@@ -64,7 +64,7 @@ func SyncRemote(c *gin.Context) {
 			log.Fatal(err)
 		}
 		size, _ := strconv.ParseInt(elem.Size, 10, 64)
-		upload := model.Upload{Name: elem.Size, Cid: elem.Cid, Size: size}
+		upload := model.Upload{Name: elem.Name, Cid: elem.Cid, Size: size}
 		db.Create(&upload) // 通过数据的指针来创建
 		//results = append(results,&elem)
 	}
