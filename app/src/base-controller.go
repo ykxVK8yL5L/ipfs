@@ -57,7 +57,7 @@ func QueryOrder(c *gin.Context) string {
 	columnMap := map[string]string{
 		"0": "id",
 		"1": "name",
-		"2": "cid"
+		"2": "cid",
 	}
 
 	column := c.DefaultQuery("order[0][column]", "0")
