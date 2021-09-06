@@ -44,7 +44,7 @@ func main() {
 	router.GET("/sync", src.SyncRemote)
 	router.POST("/addtask", src.SaveTask)
 
-	router.GET("/m3u", src.CreateM3u)
+	router.POST("/m3u", src.CreateM3u)
 
 	router.POST("/addgateway", src.AddGateway)
 	router.POST("/savegate", src.SaveGateway)
