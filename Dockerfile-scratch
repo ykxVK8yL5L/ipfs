@@ -1,12 +1,17 @@
-FROM golang:alpine AS builder
+FROM golang:1.16 AS builder
 RUN apk add -U --no-cache ca-certificates
 WORKDIR /go/src/app
 COPY ./app /go/src/app
 RUN go mod vendor
 RUN CGO_ENABLED=1 GOOS=linux go build --ldflags "-extldflags -static" -a -installsuffix cgo -o app .
 
+
+FROM alpine:3.6 as alpine
+RUN apk add -U --no-cache ca-certificates
+
+
 FROM scratch
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=alpine /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 WORKDIR /root/
 COPY ./app /root
 COPY --from=builder /go/src/app/app ./
