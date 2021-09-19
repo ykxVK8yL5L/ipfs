@@ -1,0 +1,658 @@
+{{ define "index/index.html" }}
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web3.storage文件列表</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" type='text/css' href="/public/css/bootstrap.min.css">
+    <link href="/public/css/jquery.dataTables.min.css" rel="stylesheet">
+    <link href="/public/css/style.css" rel="stylesheet">
+</head>
+
+<body>
+
+
+    <div class="container" id="app">
+        <div id="server" style="display:none;">
+<div class="card">
+<div class="card-body">
+   <form class="form" role="form">
+       <input type="hidden" class="form-control" id="sid" v-model="sid"/>
+        <div class="form-group row">
+            <label for="title" class="col-sm-2 control-label">名称</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" id="title" v-model="title"
+                    placeholder="名称">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="cid" class="col-sm-2 control-label">CID</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" id="cid" v-model="cid"
+                    placeholder="CID">
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-12">
+                <button type="button" class="btn btn-primary" @click="saveServer">保存</button>
+            </div>
+        </div>
+    </form>
+</div>
+</div>
+
+</div>
+
+<div id="task" style="display:none;">
+<div class="card">
+    <div class="card-body">
+    <form class="form" role="form">
+            <div class="form-group row">
+                <label for="taskurl" class="col-sm-2 control-label">任务地址</label>
+                <div class="col-sm-10">
+                        <textarea id="taskurl" v-model="taskurl" class="form-control" placeholder="任务地址"></textarea>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="taskurl" class="col-sm-2 control-label">是否立即下载</label>
+                <div class="col-sm-10">
+                    <label class="radio-inline">
+                        <input type="radio" id="nonow" value="0" v-model="isnow" > 否
+                    </label>
+                    <label class="radio-inline">
+                        <input type="radio" id="yenow" value="1" v-model="isnow" > 是
+                    </label>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-sm-12">
+                    <button type="button" class="btn btn-primary" @click="saveTask">保存</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
+
+
+<div id="gatewaydiv" style="display:none;">
+<div class="card">
+    <div class="card-body">
+    <form class="form" role="form">
+            <div class="form-group row">
+                <label for="gatewayurl" class="col-sm-2 control-label">网关地址</label>
+                <div class="col-sm-10">
+                        <input id="gatewayurl" v-model="gatewayurl" class="form-control" placeholder="网关地址"/>
+                </div>
+            </div>
+            <div class="form-group row">
+            <label for="gatewayname" class="col-sm-2 control-label">网关名称</label>
+                <div class="col-sm-10">
+                        <input id="gatewayurl" v-model="gatewayname" class="form-control" placeholder="网关名称"/>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-sm-12">
+                    <button type="button" class="btn btn-primary" @click="saveAddGateway">保存</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
+
+
+
+
+
+
+<div class="card">
+<div class="card-header">
+
+<div class="input-group mb-3">
+    <div class="input-group-prepend">
+        <a  class="btn btn-outline-primary dropdown-toggle" id="dropdownMenuButton" data-toggle="dropdown" aria-expanded="false">更多</a>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <a  class="btn btn-outline-primary dropdown-item" @click="syncUpload">同步</a> 
+            <a  class="btn btn-outline-primary dropdown-item" @click="addTask">新增下载</a>
+            <a class="btn btn-outline-primary dropdown-item" @click="createM3u">生成m3u</a>
+            <a class="btn btn-outline-primary dropdown-item" @click="addServer">新增文件记录</a>
+            <a  class="btn btn-outline-primary dropdown-item" @click="addGateway">添加网关</a> 
+        </div> 
+    </div>
+    
+    
+    <select v-model="gateway">                                        
+        <option :value="gw.url" v-for="gw in gatewaylist" >${gw.name}</option>                                    
+    </select>
+    <div class="input-group-append">
+        <span class="input-group-text" id="basic-addon1" @click="savegateway">默认</span>
+    </div>
+
+</div>
+<div class="alert alert-info">
+    <div><span class="btn btn-link float-left">${gateway}</span>    <button type="button" class="btn btn-link float-right" @click="delGateway">删除</button></div>
+    <div style="clear:both"></div>
+</div>    
+
+
+
+
+</div>
+<div class="card-body">
+    <table class="table table-bordered display nowrap table-striped" id="servers-table" style="width:100%">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>名称</th>
+                <th>CID</th>
+                <th>地址</th>
+                <th>大小</th>
+                <th>UpdatedAt</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+<div class="card-footer">
+</div>
+</div>
+
+    </div>
+
+    <script src="https://unpkg.com/mqtt@4.2.8/dist/mqtt.js"></script>
+    <script src="/public/js/jquery-3.6.0.min.js"></script>
+    <script src="/public/js/jquery.dataTables.min.js"></script>
+    <script src="/public/js/popper.min.js"></script>
+    <script src="/public/js/bootstrap.min.js"></script>
+    <script src="/public/js/vue.js"></script>
+    <script src="/public/js/axios.js"></script>
+    <script src="/public/layer/layer.js"></script>
+    <script>
+        Date.prototype.Format = function (fmt) { 
+            var o = {
+                "M+": this.getMonth() + 1, //月份 
+                "d+": this.getDate(), //日 
+                "h+": this.getHours(), //小时 
+                "m+": this.getMinutes(), //分 
+                "s+": this.getSeconds(), //秒 
+                "q+": Math.floor((this.getMonth() + 3) / 3), //季度 
+                "S": this.getMilliseconds() //毫秒 
+            };
+            if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+            for (var k in o)
+            if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+            return fmt;
+        }
+
+
+var app = new Vue({
+  el: '#app',
+  delimiters:['${','}'],
+  data: {
+      sid:0,
+      title:"",
+      taskurl:"",
+      url:"",
+      cid:"",
+      isnow:0,
+      table: null,
+      gateway:  {{.ipfsgateway}},
+      gatewayurl:"",
+      gatewayname:"",
+      gatewaylist: eval({{.ipfsgateways}}),
+  },
+  mounted: function () {
+      var that = this;
+      this.table =  $('#servers-table').DataTable({
+        "scrollX": true,
+        processing: true,
+        serverSide: true,
+        "pageLength": 20,
+        "order": [[ 0, "desc" ]],
+        ajax: {
+            url: "/uploads",
+        },
+        select: {
+            style: 'single',
+            //selector: 'td:not(:nth-of-type(2))'
+        },
+        columns: [
+        { data: "info",name: 'id',"render": function ( data, type, row, meta ){
+            var obj = JSON.parse(data);
+            return obj.ID;
+        }},
+        { data: "info",name: 'name',"render": function ( data, type, row, meta ){
+            var obj = JSON.parse(data);
+            return obj.Name;
+        }},
+        { data: "info",name: 'cid',"orderable": false,"render": function ( data, type, row, meta ){
+            var obj = JSON.parse(data);
+            return "<a target='_blank' href="+that.gateway+"/ipfs/"+obj.Cid+">"+obj.Cid+"</a>";
+        }},
+        { data: "info",name: 'url',"orderable": false,"render": function ( data, type, row, meta ){
+            var obj = JSON.parse(data);
+            return "<a target='_blank' href='"+that.gateway+"/ipfs/"+obj.Cid+"/"+obj.Name+"'>"+obj.Name+"</a>";
+        }},
+        { data: "info",name: 'size',"orderable": false,"render": function ( data, type, row, meta ){
+            var obj = JSON.parse(data);
+            return bytesToSize(obj.Size);
+        }},
+        { data: "info",name: 'updated_at',"orderable": false,"render": function ( data, type, row, meta ){
+            var obj = JSON.parse(data);
+            let date = new Date(obj.UpdatedAt);
+            return date.Format("yyyy-MM-dd");;
+        }},
+        { data: "info",name: 'action', "orderable": false,"searchable":false,"render": function ( data, type, row, meta ){
+            //var obj = JSON.parse(data);
+            return "<button class='btn btn-outline btn-primary btn-sm' onclick='edit("+data+")'>编辑</button><button class='btn btn-outline btn-danger btn-sm' onclick='del("+data+")'>删除</button>";
+        }}
+        ],
+        language: {
+            "sProcessing": "处理中...",
+            "sLengthMenu": "显示 _MENU_ 项结果",
+            "sZeroRecords": "没有匹配结果",
+            "sInfo": "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+            "sInfoEmpty": "显示第 0 至 0 项结果，共 0 项",
+            "sInfoFiltered": "(由 _MAX_ 项结果过滤)",
+            "sInfoPostFix": "",
+            "sSearch": "搜索:",
+            "sUrl": "",
+            "sEmptyTable": "表中数据为空",
+            "sLoadingRecords": "载入中...",
+            "sInfoThousands": ",",
+            "oPaginate": {
+                "sFirst": "首页",
+                "sPrevious": "上页",
+                "sNext": "下页",
+                "sLast": "末页"
+            },
+            "oAria": {
+                "sSortAscending": ": 以升序排列此列",
+                "sSortDescending": ": 以降序排列此列"
+            }
+        }
+    });
+      //this.syncUpload();
+   },
+  watch: {
+    gateway: function (val) {
+      this.table.ajax.reload( null, false );
+    }
+  },
+  methods: {
+    savegateway:function(){
+        var that = this;
+        layer.load();
+        axios({
+                method:'post',
+                url:'/savegate',
+                data:{
+                    url:that.gateway
+                },
+                headers: {}
+            }).then(function (response) {
+                layer.alert(response.data);
+                that.table.ajax.reload( null, false );
+                that.resetServer();
+                layer.closeAll('loading');
+            })
+            .catch(function (error) {
+                    console.log(error);
+                    layer.closeAll();
+            });
+    },
+    resetServer:function(){
+        this.sid = 0;
+        this.title = "";
+        this.cid = "";
+    },
+    addServer:function(){
+        var index=layer.open({
+            type: 1,
+            shadeClose: true,
+            content: $('#server')
+        });
+        layer.full(index);
+    },
+    addTask:function(){
+        var index=layer.open({
+            type: 1,
+            shadeClose: true,
+            content: $('#task')
+        });
+        layer.full(index);
+    },
+    addGateway:function(){
+        var index=layer.open({
+            type: 1,
+            shadeClose: true,
+            content: $('#gatewaydiv')
+        });
+        layer.full(index);
+    },
+    delGateway:function(){
+        var that = this;
+        layer.confirm('你确定要删除网关地址么？', {
+        btn: ['确定','取消'] //按钮
+        }, function(){
+            that.gatewaylist = $.grep(that.gatewaylist, function(e){ 
+            return e.url != that.gateway; 
+            });
+            that.gateway=that.gatewaylist[0].url;
+            axios({
+                method:'post',
+                url:'/addgateway',
+                headers: {
+                    'Content-Type':'application/x-www-form-urlencoded',
+                },
+                data:{
+                    url: JSON.stringify(that.gatewaylist),
+                },
+            }).then(function (response) {
+                layer.alert(response.data);
+                that.table.ajax.reload( null, false );
+                that.gatewayurl = "";
+                that.gatewayname = "";
+                //layer.closeAll();
+                layer.closeAll('loading');
+                layer.closeAll('page');
+            }).catch(function (error) {
+                    console.log(error);
+                    layer.closeAll();
+                });
+        }, function(){
+        
+        });
+    },
+    syncUpload:function(){
+        var that = this;
+        layer.load();
+        axios({
+                method:'get',
+                url:'/sync',
+                timeout: 10000,
+                data:{
+                },
+                headers: {}
+            }).then(function (response) {
+                layer.alert(response.data);
+                that.table.ajax.reload( null, false );
+                that.resetServer();
+                layer.closeAll('loading');
+            })
+            .catch(function (error) {
+                layer.alert("同步失败请稍后重试");
+                console.log(error);
+                layer.closeAll();
+            });
+    },
+    createM3u:function(){
+        var that = this;
+        layer.load();
+        axios({
+                method:'post',
+                url:'/m3u',
+                data:{
+                },
+                headers: {}
+            }).then(function (response) {
+                layer.alert(response.data);
+                that.table.ajax.reload( null, false );
+                that.resetServer();
+                layer.closeAll('loading');
+            })
+            .catch(function (error) {
+                    console.log(error);
+                    layer.closeAll();
+            });
+    },
+
+    saveTask:function(){
+        var that = this;
+        if(!that.taskurl || 0 === that.taskurl.trim().length){
+            layer.alert("地址不能为空");
+            return;
+        }
+        layer.load();
+        axios({
+            method:'post',
+            url:'/addtask',
+            data:{
+                url: that.taskurl,
+                isnow: parseInt(that.isnow),
+            },
+            headers: {}
+        }).then(function (response) {
+            layer.alert(response.data);
+            that.table.ajax.reload( null, false );
+            that.taskurl = "";
+            that.isnow = 0;
+            //layer.closeAll();
+            layer.closeAll('loading');
+            layer.closeAll('page');
+        })
+            .catch(function (error) {
+                console.log(error);
+                layer.closeAll();
+            });
+    },
+    saveAddGateway:function(){
+
+        var that = this;
+        if(!that.gatewayurl || 0 === that.gatewayurl.trim().length){
+            layer.alert("地址不能为空");
+            return;
+        }
+        that.gatewaylist.push({url:that.gatewayurl,name:that.gatewayname},);
+        layer.load();
+
+        axios({
+            method:'post',
+            url:'/addgateway',
+            data:{
+                'url':JSON.stringify(that.gatewaylist)
+            },
+            headers: { 
+            }
+        }).then(function (response) {
+            layer.alert(response.data);
+            that.table.ajax.reload( null, false );
+            that.gatewayurl = "";
+            that.gatewayname = "";
+            //layer.closeAll();
+            layer.closeAll('loading');
+            layer.closeAll('page');
+        })
+            .catch(function (error) {
+                console.log(error);
+                layer.closeAll();
+            });
+    },
+    saveServer:function(){
+        var that = this;
+
+        if(!that.cid || 0 === that.cid.trim().length){
+            layer.msg("CID不能为空");
+            return;
+        }
+        layer.load();
+
+        if(that.sid==0){
+            axios({
+                method:'post',
+                url:'/save',
+                data:{
+                    name: that.title,
+                    cid: that.cid,
+                },
+                headers: {}
+            }).then(function (response) {
+                layer.msg(response.data);
+                that.table.ajax.reload( null, false );
+                that.resetServer();
+                layer.closeAll();
+            })
+                .catch(function (error) {
+                    console.log(error);
+                    layer.closeAll();
+                });
+        }else{
+
+            axios({
+                method:'post',
+                url:'/saveEdit',
+                data:{
+                    id:that.sid,
+                    name: that.title,
+                    cid: that.cid,
+                },
+                headers: {}
+            }).then(function (response) {
+                $(".dtr-modal-close").click();
+                layer.msg(response.data);
+                that.table.ajax.reload( null, false );
+                that.resetServer();
+                layer.closeAll();
+            }).catch(function (error) {
+                    console.log(error);
+                    layer.closeAll();
+                });
+        }
+
+
+    },
+    edit:function(obj){
+        var that = this;
+        that.sid = obj.ID;
+        that.title = obj.Name;
+        that.cid = obj.Cid;
+        var index=layer.open({
+            type: 1,
+            shadeClose: true,
+            content: $('#server')
+        });
+        layer.full(index);
+    },
+    del:function(obj){
+        var that = this;
+        if(!obj){
+            layer.msg("不能为空");
+            return;
+        }
+        layer.load();
+        axios({
+            method:'post',
+            url:'/del',
+            data:{
+                id: obj.ID
+            },
+            headers: {}
+        }).then(function (response) {
+            layer.msg(response.data);
+            that.table.ajax.reload( null, false );
+            that.resetServer();
+            layer.closeAll();
+        })
+        .catch(function (error) {
+            console.log(error);
+            layer.closeAll();
+        });
+    },
+    viewimg:function(obj){
+        //var that = this;
+        //var findname = obj.name.match(/[A-Za-z]+\-[0-9]+/g);
+        //window.open("https://avmoo.casa/cn/search/"+findname); 
+        layer.ready(function(){
+    	var index = layer.load(2);
+        layer.open({
+                type: 1,
+                title: false,
+                closeBtn: 1,
+                area: ['80%','400'], //宽高
+                skin: 'layui-layer-nobg', //没有背景色
+                shadeClose: true,
+                content: '<div style="text-align:center;"><img height="400" src="'+obj.image+'"/></div>'
+            });
+        layer.close(index);
+    })
+
+    }
+  }
+})
+
+function edit(obj){
+    app.edit(obj);
+}
+function del(obj){
+    app.del(obj);
+    $(".dtr-modal-close").click();
+}
+function viewimg(obj){
+    app.viewimg(obj);
+}
+
+function bytesToSize(bytes) {
+    if(bytes === 0) return '0 B';
+    var k = 1024;
+    var sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    var i = Math.floor(Math.log(bytes) / Math.log(k));
+    return (bytes / Math.pow(k, i)).toPrecision(3) + ' ' + sizes[i];
+    // return parseFloat(bytes / Math.pow(k, i)).toFixed(2)  + sizes[i];
+}
+
+
+//mqtt start
+const clientId = 'mqttjs_' + Math.random().toString(16).substr(2, 8)
+        const host = 'ws://broker-cn.emqx.io:8083/mqtt'
+        const options = {
+        keepalive: 60,
+        clientId: clientId,
+        protocolId: 'MQTT',
+        protocolVersion: 4,
+        clean: true,
+        reconnectPeriod: 1000,
+        connectTimeout: 30 * 1000,
+        will: {
+            topic: {{.subtopic}},
+            payload: 'Connection Closed abnormally..!',
+            qos: 0,
+            retain: false
+        },
+        }
+        const client = mqtt.connect(host, options)
+        client.on('error', (err) => {
+            console.log('Connection error: ', err)
+            client.end()
+        })
+        client.on('reconnect', () => {
+            console.log('Reconnecting...')
+        })
+        client.on('connect', function () {
+            client.subscribe({{.subtopic}}, function (err) {
+                if (!err) {
+                    console.log("订阅成功");
+                }
+            })
+        })
+        client.on('message', function (topic, message) {
+            // message is Buffer
+            //console.log("订阅信息:"+message.toString());
+            if(topic=={{.subtopic}}&&message.toString()=='ok'){
+                layer.confirm('有视频上传成功是否立即更新'+message.toString(), {
+                btn: ['更新','取消'] //按钮
+                }, function(){
+                    app.syncUpload();
+                }, function(){
+                    
+                });
+            }
+            //client.end()
+        })
+        //mqtt end
+</script>
+</body>
+{{ end }}
