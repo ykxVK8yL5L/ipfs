@@ -1,5 +1,4 @@
 FROM golang:1.16 AS builder
-RUN apk add -U --no-cache ca-certificates
 WORKDIR /go/src/app
 COPY ./app /go/src/app
 RUN go mod vendor
