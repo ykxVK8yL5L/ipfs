@@ -78,7 +78,6 @@ func SyncRemote(c *gin.Context) {
 }
 
 func SaveTask(c *gin.Context) {
-
 	var param struct {
 		Url   string
 		Isnow int
@@ -104,7 +103,7 @@ func SaveTask(c *gin.Context) {
 		panic(err)
 	}
 	collection := client.Database(inc.GetConfig("dbname")).Collection("task")
-	task := Task{Url: param.Url, Isnow: strconv.Atoi(param.Isnow)}
+	task := Task{Url: param.Url, Isnow: param.Isnow}
 	collection.InsertOne(context.TODO(), task)
 
 	if param.Isnow == 1 {
