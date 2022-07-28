@@ -27,7 +27,7 @@ type FUpload struct {
 
 type Task struct {
 	Url   string
-	Isnow string
+	Isnow int
 }
 
 func SyncRemote(c *gin.Context) {
@@ -49,7 +49,7 @@ func SyncRemote(c *gin.Context) {
 		panic(err)
 	}
 	collection := client.Database(inc.GetConfig("dbname")).Collection("web3")
-	filter := bson.D{{"issync", "0"}}
+	filter := bson.D{{"issync", 0}}
 	cur, errf := collection.Find(context.TODO(), filter, findOptions)
 	if errf != nil {
 		log.Fatal(err)
@@ -104,7 +104,7 @@ func SaveTask(c *gin.Context) {
 		panic(err)
 	}
 	collection := client.Database(inc.GetConfig("dbname")).Collection("task")
-	task := Task{Url: param.Url, Isnow: strconv.Itoa(param.Isnow)}
+	task := Task{Url: param.Url, Isnow: strconv.Atoi(param.Isnow)}
 	collection.InsertOne(context.TODO(), task)
 
 	if param.Isnow == 1 {
